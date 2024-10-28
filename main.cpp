@@ -1,6 +1,6 @@
 #include <Novice.h>
-#include <cassert>
 #include <cmath>
+#include <cassert>
 
 const char kWindowTitle[] = "LE2D_03_ウチボリ_ユウタ";
 
@@ -11,6 +11,19 @@ struct Vector3 {
 struct Matrix4x4 {
 	float m[4][4];
 };
+
+static const int kRowHeight = 20;
+static const int kColumnWidth = 60;
+void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
+	Novice::ScreenPrintf(x, y, "%s", label);
+	for (int row = 0; row < 4; ++row) {
+		for (int column = 0; column < 4; ++column) {
+			Novice::ScreenPrintf(
+				x + column * kColumnWidth, y + (row + 1) * kRowHeight, "%6.03f",
+				matrix.m[row][column]);
+		}
+	}
+}
 
 float Dot(const Vector3& v1, const Vector3& v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
 float Length(const Vector3& v) { return std::sqrt(Dot(v, v)); }
@@ -24,46 +37,31 @@ Vector3 Normalize(const Vector3& v) {
 
 Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle) {
 
-
-	//資料p20を参考に中身を埋める。nはaxisのこと
 	float cos = std::cos(angle);
 	float sin = std::sin(angle);
 
 	Matrix4x4 rotateMatrix = {};
-	rotateMatrix.m[0][0] = 
-		rotateMatrix.m[0][1] = 
-		rotateMatrix.m[0][2] = 
-		rotateMatrix.m[0][3] = 
+	rotateMatrix.m[0][0] = axis.x * axis.x * (1 - cos) + cos;
+	rotateMatrix.m[0][1] = axis.x * axis.y * (1 - cos) + axis.z * sin;
+	rotateMatrix.m[0][2] = axis.x * axis.z * (1 - cos) - axis.y * sin;
+	rotateMatrix.m[0][3] = 0.0f;
 
-		rotateMatrix.m[1][0] = 
-		rotateMatrix.m[1][1] = 
-		rotateMatrix.m[1][2] = 
-		rotateMatrix.m[1][3] = 
+	rotateMatrix.m[1][0] = axis.x * axis.y * (1 - cos) - axis.z * sin;
+	rotateMatrix.m[1][1] = axis.y * axis.y * (1 - cos) + cos;
+	rotateMatrix.m[1][2] = axis.y * axis.z * (1 - cos) + axis.x * sin;
+	rotateMatrix.m[1][3] = 0.0f;
 
-		rotateMatrix.m[2][0] = 
-		rotateMatrix.m[2][1] = 
-		rotateMatrix.m[2][2] = 
-		rotateMatrix.m[2][3] = 
+	rotateMatrix.m[2][0] = axis.x * axis.z*(1 - cos) + axis.y * sin;
+	rotateMatrix.m[2][1] = axis.y * axis.z * (1 - cos) - axis.x * sin;
+	rotateMatrix.m[2][2] = axis.z * axis.z * (1 - cos) + cos;
+	rotateMatrix.m[2][3] = 0.0f;
 
-		rotateMatrix.m[3][0] = 
-		rotateMatrix.m[3][1] = 
-		rotateMatrix.m[3][2] = 
-		rotateMatrix.m[3][3] = 
+	rotateMatrix.m[3][0] = 0.0f;
+	rotateMatrix.m[3][1] = 0.0f;
+	rotateMatrix.m[3][2] = 0.0f;
+	rotateMatrix.m[3][3] = 1.0f;
 
-		return rotateMatrix;
-}
-
-static const int kRowHeight = 20;
-static const int kColumnWidth = 60;
-void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
-	Novice::ScreenPrintf(x, y, "%s", label);
-	for (int row = 0; row < 4; ++row) {
-		for (int column = 0; column < 4; ++column) {
-			Novice::ScreenPrintf(
-				x + column * kColumnWidth, y + (row + 1) * kRowHeight, "%6.03f",
-				matrix.m[row][column]);
-		}
-	}
+	return rotateMatrix;
 }
 
 
