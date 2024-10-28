@@ -28,7 +28,6 @@ void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label
 float Dot(const Vector3& v1, const Vector3& v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
 float Length(const Vector3& v) { return std::sqrt(Dot(v, v)); }
 
-
 Vector3 Normalize(const Vector3& v) {
 	float length = Length(v);
 	assert(length != 0.0f);
