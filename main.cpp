@@ -34,28 +34,34 @@ Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to) {
 	//to=v
 
 	//from,toのクロス積を取る
-	Vector3 cross =
+	Vector3 cross = {
+		from.y * to.z - from.z * to.y,  // x成分
+		from.z * to.x - from.x * to.z,  // y成分
+		from.x * to.y - from.y * to.x   // z成分
+	};
 
 		//from,toの内積を取る
-		float cos = from * from;
+		float cos = from.x * to.x+from.y*to.y+from.z*to.z;
 
 		//from,toの長さを取る
-		float sin = 
+		float sin = sqrt((from.y * to.z - from.z * to.y) * (from.y * to.z - from.z * to.y) +
+			(from.z * to.x - from.x * to.z) * (from.z * to.x - from.x * to.z) +
+			(from.x * to.y - from.y * to.x) * (from.x * to.y - from.y * to.x));
 
 		float epsilon = 1e-6f;
 	Vector3 axis = {};
 	if (std::abs(cos + 1.0f) <= epsilon) {
 		if (std::abs(from.x) > epsilon || std::abs(from.y) > epsilon) {
 			//(ux≠0||uy≠0)の際のaxisの値を入れる
-			axis.x = 
-				axis.y = 
-				axis.z = 
+			axis.x = -from.y;
+			axis.y = from.x;
+			axis.z = 0.0f;
 		}
 		else if (std::abs(from.x) > epsilon || std::abs(from.z) > epsilon) {
 			//(ux≠0||uz≠0)の際のaxisの値を入れる
-			axis.x = 
-				axis.y = 
-				axis.z = 
+			axis.x = -from.z;
+			axis.y = 0.0f;
+			axis.z = from.x;
 		}
 		else {
 			// zero vector
@@ -70,25 +76,25 @@ Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to) {
 
 	//確認課題01_01同様中身を埋める
 	Matrix4x4 rotateMatrix = {};
-	rotateMatrix.m[0][0] = 
-		rotateMatrix.m[0][1] = 
-		rotateMatrix.m[0][2] = 
-		rotateMatrix.m[0][3] = 
+	rotateMatrix.m[0][0] = axis.x * axis.x * (1 - cos) + cos;
+	rotateMatrix.m[0][1] = axis.x * axis.y * (1 - cos) + axis.z * sin;
+	rotateMatrix.m[0][2] = axis.x * axis.z * (1 - cos) - axis.y * sin;
+	rotateMatrix.m[0][3] = 0.0f;
 
-		rotateMatrix.m[1][0] = 
-		rotateMatrix.m[1][1] = 
-		rotateMatrix.m[1][2] = 
-		rotateMatrix.m[1][3] = 
+	rotateMatrix.m[1][0] = axis.x * axis.y * (1 - cos) - axis.z * sin;
+	rotateMatrix.m[1][1] = axis.y * axis.y * (1 - cos) + cos;
+	rotateMatrix.m[1][2] = axis.y * axis.z * (1 - cos) + axis.x * sin;
+	rotateMatrix.m[1][3] = 0.0f;
 
-		rotateMatrix.m[2][0] = 
-		rotateMatrix.m[2][1] = 
-		rotateMatrix.m[2][2] = 
-		rotateMatrix.m[2][3] = 
+	rotateMatrix.m[2][0] = axis.x * axis.z * (1 - cos) + axis.y * sin;
+	rotateMatrix.m[2][1] = axis.y * axis.z * (1 - cos) - axis.x * sin;
+	rotateMatrix.m[2][2] = axis.z * axis.z * (1 - cos) + cos;
+	rotateMatrix.m[2][3] = 0.0f;
 
-		rotateMatrix.m[3][0] = 
-		rotateMatrix.m[3][1] = 
-		rotateMatrix.m[3][2] = 
-		rotateMatrix.m[3][3] = 
+	rotateMatrix.m[3][0] = 0.0f;
+	rotateMatrix.m[3][1] = 0.0f;
+	rotateMatrix.m[3][2] = 0.0f;
+	rotateMatrix.m[3][3] = 1.0f;
 
 		return rotateMatrix;
 }
@@ -120,7 +126,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 v1{ 1.0f, 3.0f, -5.0f };
 	Vector3 v2{ 4.0f, -1.0f, 2.0f };
-	float k = { 4.0f };
+	//float k = { 4.0f };
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
