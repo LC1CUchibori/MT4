@@ -4,7 +4,7 @@
 #include <cmath>
 #include <numbers>
 
-const char kWindowTitle[] = "MT4";
+const char kWindowTitle[] = "LE2D_03_ウチボリ_ユウタ_MT4";
 
 struct Vector3 {
 	float x, y, z;
