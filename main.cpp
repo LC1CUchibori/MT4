@@ -16,32 +16,64 @@ struct Quaternion {
 
 Quaternion IdentityQuaternion() { 
 
-	//資料p8を参考にする。wだけに1を入れてそれ以外を0にするだけ
-
+	return {0.0f, 0.0f, 0.0f, 1.0f};
 }
 
 Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs) {
 
-	//資料p7を参考にする。1行ごとに分けて考えること。(何もなし=w、i=x,j=y,k=z)
-	//必ず、x,y,z,wの値に分かれます。1つに合成しないこと。。
+	// クオータニオンの積
+	return {
+		lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y, // x
+		lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x, // y
+		lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w, // z
+		lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z  // w
+	};
 }
 
 Quaternion Conjugate(const Quaternion& quaternion) {
 
-	//p9を参考にする。w以外にマイナスを付けるだけ。
+	// 共役: x, y, zを反転
+	return {
+		-quaternion.x,
+		-quaternion.y,
+		-quaternion.z,
+		quaternion.w
+	};
 }
 
 float Norm(const Quaternion& quaternion) {
 
-	//p10を参考にする。Vector3でやったようなLnegthの式にwの2乗が追加されているだけ。
+	// ノルム（長さの二乗）
+	return std::sqrt(quaternion.x * quaternion.x +
+		quaternion.y * quaternion.y +
+		quaternion.z * quaternion.z + 
+		quaternion.w * quaternion.w);
 }
 
 Quaternion Normalize(const Quaternion& quaternion) {
 
-	//p11を参考にする。Vector3のNomalizeにwが増えただけ。
+	// ノルムの平方根を計算
+	float length = std::sqrt(Norm(quaternion));
+	assert(length != 0.0f && "Division by zero during normalization");
+	// 正規化
+	return {
+		quaternion.x / length,
+		quaternion.y / length,
+		quaternion.z / length,
+		quaternion.w / length
+	};
 }
 Quaternion Inverse(const Quaternion& quaternion) {
-	//p12を参考にする。上記のNormalizeのlengthに該当する値をlengthの二乗に、クオータニオンに該当していた値をクオータニオンの共役に変えるだけ。
+	// 逆数 = 共役 / ノルムの二乗
+	float normSquared = Norm(quaternion);
+	assert(normSquared != 0.0f && "Division by zero during inversion");
+	Quaternion conjugate = Conjugate(quaternion);
+	return {
+		conjugate.x / normSquared,
+		conjugate.y / normSquared,
+		conjugate.z / normSquared,
+		conjugate.w / normSquared
+	};
 }
 
 static const int kRowHeight = 20;
@@ -68,7 +100,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 v1{ 1.0f, 3.0f, -5.0f };
 	Vector3 v2{ 4.0f, -1.0f, 2.0f };
-	float k = { 4.0f };
+	//float k = { 4.0f };
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
