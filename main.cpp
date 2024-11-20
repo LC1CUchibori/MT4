@@ -56,6 +56,7 @@ Quaternion Normalize(const Quaternion& quaternion) {
 	return { quaternion.x / norm, quaternion.y / norm, quaternion.z / norm, quaternion.w / norm };
 
 }
+
 // 逆Quaternionを返す
 Quaternion Inverse(const Quaternion& quaternion) {
 	Quaternion conjugate = Conjugate(quaternion);
