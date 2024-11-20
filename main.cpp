@@ -42,38 +42,30 @@ Quaternion Conjugate(const Quaternion& quaternion) {
 }
 
 float Norm(const Quaternion& quaternion) {
-
-	// ノルム（長さの二乗）
 	return std::sqrt(quaternion.x * quaternion.x +
 		quaternion.y * quaternion.y +
-		quaternion.z * quaternion.z + 
+		quaternion.z * quaternion.z +
 		quaternion.w * quaternion.w);
 }
-
+// 正規化したQuaternionを返す
 Quaternion Normalize(const Quaternion& quaternion) {
+	float norm = Norm(quaternion);
+	if (norm == 0.0f) {
+		return { 0.0f, 0.0f, 0.0f, 1.0f };
+	}
+	return { quaternion.x / norm, quaternion.y / norm, quaternion.z / norm, quaternion.w / norm };
 
-	// ノルムの平方根を計算
-	float length = std::sqrt(Norm(quaternion));
-	assert(length != 0.0f && "Division by zero during normalization");
-	// 正規化
-	return {
-		quaternion.x / length,
-		quaternion.y / length,
-		quaternion.z / length,
-		quaternion.w / length
-	};
 }
+// 逆Quaternionを返す
 Quaternion Inverse(const Quaternion& quaternion) {
-	// 逆数 = 共役 / ノルムの二乗
-	float normSquared = Norm(quaternion);
-	assert(normSquared != 0.0f && "Division by zero during inversion");
 	Quaternion conjugate = Conjugate(quaternion);
-	return {
-		conjugate.x / normSquared,
-		conjugate.y / normSquared,
-		conjugate.z / normSquared,
-		conjugate.w / normSquared
-	};
+	float norm = Norm(quaternion);
+	float normSq = norm * norm;
+	if (normSq == 0.0f) {
+		return { 0.0f, 0.0f, 0.0f, 1.0f };
+	}
+	return { conjugate.x / normSq, conjugate.y / normSq, conjugate.z / normSq, conjugate.w / normSq };
+
 }
 
 static const int kRowHeight = 20;
