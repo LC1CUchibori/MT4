@@ -1,5 +1,6 @@
 #include <Novice.h>
 #include <cmath>
+#include "math.h"
 
 const char kWindowTitle[] = "MT4_01_04_Basic";
 
@@ -16,28 +17,88 @@ struct Matrix4x4 {
 };
 
 Vector3 Normalize(const Vector3& v) {
-	//Noramlizeの中身を埋める
-	//追加でhや関数が必要な場合は適宜増やす
+	Vector3 result;
+	result.x = float(v.x / sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)));
+	result.y = float(v.y / sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)));
+	result.z = float(v.z / sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)));
+
+	return result;
 }
 
 Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
-	//Transformの中身を埋める
+	Vector3 result;
+	result.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z * matrix.m[2][0] + matrix.m[3][0];
+	result.y = vector.x * matrix.m[0][1] + vector.y * matrix.m[1][1] + vector.z * matrix.m[2][1] + matrix.m[3][1];
+	result.z = vector.x * matrix.m[0][2] + vector.y * matrix.m[1][2] + vector.z * matrix.m[2][2] + matrix.m[3][2];
+	float w = vector.x * matrix.m[0][3] + vector.y * matrix.m[1][3] + vector.z * matrix.m[2][3] + matrix.m[3][3];
+	assert(w != 0.0f);
+	result.x /= w;
+	result.y /= w;
+	result.z /= w;
+	return result;
 }
 
-Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
-	//資料p3を参考に中身を埋める
-	//q=(w,v)の順で表記されているので注意
-	//n=axis	;
+Quaternion MakeRotateAxisAngleQuaternion(
+	const Vector3& axis, float angle) {
+	Vector3 normAxis = Normalize(axis);
+	float sinHalfAngle = std::sin(angle / 2.0f);
+	float cosHalfAngle = std::cos(angle / 2.0f);
+	return { normAxis.x * sinHalfAngle, normAxis.y * sinHalfAngle, normAxis.z * sinHalfAngle, cosHalfAngle };
 }
 
-Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion) {
-	//資料p4を参考に中身を埋める
-	//q=quaternion,r=(w=0,vector),q*=qの共役
-	//*注意*戻り値はVector3型なのでwを除いた値だけを返すこと
+Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs) {
+	return {
+		lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+		lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
+		lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
+		lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z
+	};
+}
+
+Vector3 RotateVector(const Vector3& vector, const Quaternion&
+	quaternion) {
+	Quaternion qVector = { vector.x, vector.y, vector.z, 0.0f };
+	Quaternion qConjugate = { -quaternion.x, -quaternion.y, -quaternion.z, quaternion.w };
+	Quaternion qResult = Multiply(Multiply(quaternion, qVector), qConjugate);
+	return { qResult.x, qResult.y, qResult.z };
 }
 
 Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion) {
-	//資料p8を参考にquaternionを使用した回転行列を作成する
+	Matrix4x4 matrix = {};
+
+	float xx = quaternion.x * quaternion.x;
+	float yy = quaternion.y * quaternion.y;
+	float zz = quaternion.z * quaternion.z;
+	float xy = quaternion.x * quaternion.y;
+	float xz = quaternion.x * quaternion.z;
+	float yz = quaternion.y * quaternion.z;
+	float wx = quaternion.w * quaternion.x;
+	float wy = quaternion.w * quaternion.y;
+	float wz = quaternion.w * quaternion.z;
+
+	matrix.m[0][0] = 1.0f - 2.0f * (yy + zz);
+	matrix.m[0][1] = 2.0f * (xy - wz);
+	matrix.m[0][2] = 2.0f * (xz + wy);
+	matrix.m[0][3] = 0.0f;
+
+	matrix.m[1][0] = 2.0f * (xy + wz);
+	matrix.m[1][1] = 1.0f - 2.0f * (xx + zz);
+	matrix.m[1][2] = 2.0f * (yz - wx);
+	matrix.m[1][3] = 0.0f;
+
+	matrix.m[2][0] = 2.0f * (xz - wy);
+	matrix.m[2][1] = 2.0f * (yz + wx);
+	matrix.m[2][2] = 1.0f - 2.0f * (xx + yy);
+	matrix.m[2][3] = 0.0f;
+
+	matrix.m[3][0] = 0.0f;
+	matrix.m[3][1] = 0.0f;
+	matrix.m[3][2] = 0.0f;
+	matrix.m[3][3] = 1.0f;
+
+	matrix = Transpose(matrix);
+
+	return matrix;
 }
 
 static const int kRowHeight = 20;
