@@ -1,136 +1,135 @@
 #include <Novice.h>
 #include <cmath>
+#include <algorithm> // For std::max
 
-const char kWindowTitle[] = "MT4_01_04_Basic";
+const char kWindowTitle[] = "LE2D_03_ウチボリ_ユウタ";
 
 struct Vector3 {
-	float x, y, z;
+    float x, y, z;
 };
 
 struct Quaternion {
-	float x, y, z, w;
+    float x, y, z, w;
 };
 
 struct Matrix4x4 {
-	float m[4][4];
+    float m[4][4];
 };
 
+// ベクトル正規化
 Vector3 Normalize(const Vector3& v) {
-	//Noramlizeの中身を埋める
-	//追加でhや関数が必要な場合は適宜増やす
+    float length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    if (length == 0) {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+    return { v.x / length, v.y / length, v.z / length };
 }
 
-Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
-	//Transformの中身を埋める
-}
-
+// クォータニオン生成
 Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
-	//資料p3を参考に中身を埋める
-	//q=(w,v)の順で表記されているので注意
-	//n=axis	;
+    Vector3 normalizedAxis = Normalize(axis);
+    float sinHalfAngle = std::sin(angle / 2.0f);
+    float cosHalfAngle = std::cos(angle / 2.0f);
+
+    return {
+        normalizedAxis.x * sinHalfAngle,
+        normalizedAxis.y * sinHalfAngle,
+        normalizedAxis.z * sinHalfAngle,
+        cosHalfAngle
+    };
 }
 
-Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion) {
-	//資料p4を参考に中身を埋める
-	//q=quaternion,r=(w=0,vector),q*=qの共役
-	//*注意*戻り値はVector3型なのでwを除いた値だけを返すこと
+// 球面線形補間
+Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
+    // 内積計算
+    float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
+
+    // クォータニオンの逆転が必要かを確認（内積が負の場合）
+    Quaternion Quaternion1 = q1;
+    if (dot < 0.0f) {
+        dot = -dot;
+        Quaternion1.x = -q1.x;
+        Quaternion1.y = -q1.y;
+        Quaternion1.z = -q1.z;
+        Quaternion1.w = -q1.w;
+    }
+
+    // 線形補間を使用（角度が非常に小さい場合）
+    if (dot > 0.9995f) {
+        return {
+            q0.x + t * (Quaternion1.x - q0.x),
+            q0.y + t * (Quaternion1.y - q0.y),
+            q0.z + t * (Quaternion1.z - q0.z),
+            q0.w + t * (Quaternion1.w - q0.w)
+        };
+    }
+
+    // 球面補間計算
+    float theta = std::acos(dot);
+    float sinTheta = std::sqrt(1.0f - dot * dot);
+    float a = std::sin((1.0f - t) * theta) / sinTheta;
+    float b = std::sin(t * theta) / sinTheta;
+
+    return {
+        a * q0.x + b * Quaternion1.x,
+        a * q0.y + b * Quaternion1.y,
+        a * q0.z + b * Quaternion1.z,
+        a * q0.w + b * Quaternion1.w
+    };
 }
 
-Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion) {
-	//資料p8を参考にquaternionを使用した回転行列を作成する
-}
-
+// 表示関数
 static const int kRowHeight = 20;
 static const int kColumnWidth = 60;
-void MatrixScreenPrintf(int x, int y, const Matrix4x4& matrix, const char* label) {
-	Novice::ScreenPrintf(x, y, "%s", label);
-	for (int row = 0; row < 4; ++row) {
-		for (int column = 0; column < 4; ++column) {
-			Novice::ScreenPrintf(
-				x + column * kColumnWidth, y + (row + 1) * kRowHeight, "%6.03f",
-				matrix.m[row][column]);
-		}
-	}
-}
 
-void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) {
-	Novice::ScreenPrintf(x, y, "%.02f", vector.x);
-	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", vector.y);
-	Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", vector.z);
-	Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%s", label);
-}
-
-void QuaternionScreenPrintf(int x, int y, Quaternion quaternion, const char* label) {
-	Novice::ScreenPrintf(x, y, "%.02f", quaternion.x);
-	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", quaternion.y);
-	Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", quaternion.z);
-	Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%.02f", quaternion.w);
-	Novice::ScreenPrintf(x + kColumnWidth * 4, y, label);
+void QuaternionScreenPrintf(int x, int y, const Quaternion& quaternion, const char* label) {
+    Novice::ScreenPrintf(x, y, "%.02f", quaternion.x);
+    Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", quaternion.y);
+    Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", quaternion.z);
+    Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%.02f", quaternion.w);
+    Novice::ScreenPrintf(x + kColumnWidth * 4, y, label);
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-	// ライブラリの初期化
-	const int kWindowWidth = 1280;
-	const int kWindowHeight = 720;
-	Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
+    const int kWindowWidth = 1280;
+    const int kWindowHeight = 720;
+    Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
 
-	// キー入力結果を受け取る箱
-	char keys[256] = { 0 };
-	char preKeys[256] = { 0 };
+    char keys[256] = { 0 };
+    char preKeys[256] = { 0 };
 
-	Vector3 v1{ 1.0f, 3.0f, -5.0f };
-	Vector3 v2{ 4.0f, -1.0f, 2.0f };
-	float k = { 4.0f };
+    while (Novice::ProcessMessage() == 0) {
+        Novice::BeginFrame();
+        memcpy(preKeys, keys, 256);
+        Novice::GetHitKeyStateAll(keys);
 
-	// ウィンドウの×ボタンが押されるまでループ
-	while (Novice::ProcessMessage() == 0) {
-		// フレームの開始
-		Novice::BeginFrame();
+        // クォータニオンの設定
+        Quaternion rotation0 = MakeRotateAxisAngleQuaternion({ 0.71f, 0.71f, 0.0f }, 0.3f);
+        Quaternion rotation1 = MakeRotateAxisAngleQuaternion({ 0.71f, 0.0f, 0.71f }, 3.141592f);
+        // 球面線形補間
+        Quaternion interpolate0 = Slerp(rotation0, rotation1, 0.0f);
+        Quaternion interpolate1 = Slerp(rotation0, rotation1, 0.3f);
+        Quaternion interpolate2 = Slerp(rotation0, rotation1, 0.5f);
+        Quaternion interpolate3 = Slerp(rotation0, rotation1, 0.7f);
+        Quaternion interpolate4 = Slerp(rotation0, rotation1, 1.0f);
 
-		// キー入力を受け取る
-		memcpy(preKeys, keys, 256);
-		Novice::GetHitKeyStateAll(keys);
+        // 結果
+        QuaternionScreenPrintf(0, 0, interpolate0, "interpolate0,Slerp(q0,q1,0.0f)\n");
+        QuaternionScreenPrintf(0, 20, interpolate1, "interpolate1,Slerp(q0,q1,0.3f)\n");
+        QuaternionScreenPrintf(0, 40, interpolate2, "interpolate2,Slerp(q0,q1,0.5f)\n");
+        QuaternionScreenPrintf(0, 60, interpolate3, "interpolate3,Slerp(q0,q1,0.7f)\n");
+        QuaternionScreenPrintf(0, 80, interpolate4, "interpolate4,Slerp(q0,q1,1.0f)\n");
 
-		///
-		/// ↓更新処理ここから
-		///
+        Novice::EndFrame();
 
+        // ESCキーで終了
+        if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
+            break;
+        }
+    }
 
-		///
-		/// ↑更新処理ここまで
-		///
-
-		///
-		/// ↓描画処理ここから
-		///
-
-		Quaternion rotation = MakeRotateAxisAngleQuaternion(Normalize(Vector3{ 1.0f, 0.4f, -0.2f }), 0.45f);
-		Vector3 pointY = { 2.1f, -0.9f, 1.3f };
-		Matrix4x4 rotateMatrix = MakeRotateMatrix(rotation);
-		Vector3 rotateByQuaternion = RotateVector(pointY, rotation);
-		Vector3 rotateByMatrix = Transform(pointY, rotateMatrix);
-
-		QuaternionScreenPrintf(0, kRowHeight * 0, rotation, "   : rotation");
-		MatrixScreenPrintf(0, kRowHeight * 1, rotateMatrix, "rotateMatrix");
-		VectorScreenPrintf(0, kRowHeight * 6, rotateByQuaternion, "   : rotateByQuaternion");
-		VectorScreenPrintf(0, kRowHeight * 7, rotateByMatrix, "   : rotateByMatrix");
-
-		///
-		/// ↑描画処理ここまで
-		///
-
-		// フレームの終了
-		Novice::EndFrame();
-
-		// ESCキーが押されたらループを抜ける
-		if (preKeys[DIK_ESCAPE] == 0 && keys[DIK_ESCAPE] != 0) {
-			break;
-		}
-	}
-
-	// ライブラリの終了
-	Novice::Finalize();
-	return 0;
+    Novice::Finalize();
+    return 0;
 }
